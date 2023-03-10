@@ -8,6 +8,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/textproto"
+	"strings"
 
 	"github.com/vladimirvivien/go4vl/device"
 	"github.com/vladimirvivien/go4vl/v4l2"
@@ -38,12 +39,30 @@ func main() {
 
 	frames = camera.GetOutput()
 
-	log.Printf("Serving images: [%s/stream]", port)
-	http.HandleFunc("/stream", imageServ)
-	log.Fatal(http.ListenAndServe(port, nil))
+	log.Printf("Serving images: port %s", port)
+	s := &isvr{}
+	log.Fatal(http.ListenAndServe(port, s))
 }
 
-func imageServ(w http.ResponseWriter, req *http.Request) {
+type isvr struct {
+}
+
+func (svr *isvr) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	toks := strings.Split(req.URL.Path, "/")
+	log.Printf("%s %d %+v", req.Method, len(toks), toks)
+
+	w.Header().Set("Allow-Origin", "*")
+	w.Header().Set("Allow-Methods", "GET,OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Origin,Access-Control-Allow-Origin,Authorization,Access-Control-Max-Age,Content-Type,Content-Length")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Expose-Headers", "Cache-Control,Content-Length,Content-Language,Content-Type,Expires,Last-Modified,pragma")
+
+	// rgw cam TTT_HANNA_EIRNYRASPI status
+	if strings.HasSuffix(req.URL.Path, "/status") || req.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
 	mimeWriter := multipart.NewWriter(w)
 	w.Header().Set("Content-Type", fmt.Sprintf("multipart/x-mixed-replace; boundary=%s", mimeWriter.Boundary()))
 	partHeader := make(textproto.MIMEHeader)

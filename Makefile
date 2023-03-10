@@ -1,4 +1,6 @@
-all: tmp/httpcamsvr
+.PHONY: all httpcamsvr
 
-tmp/httpcamsvr:
-	go build -o tmp/httpcamsvr httpcamsvr/*
+all: httpcamsvr
+
+httpcamsvr:
+	GO111MODULE=on CGO_ENABLED=1 go build -o tmp/httpcamsvr httpcamsvr/*

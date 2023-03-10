@@ -1,4 +1,4 @@
-module rptools
+module rpitools
 
 go 1.19
 
